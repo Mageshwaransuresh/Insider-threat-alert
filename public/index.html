@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ThreatGuard — Insider Threat Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #080810;
+    --surface:  #0f0f1c;
+    --border:   #1e1e32;
+    --red:      #ef4444;
+    --red-dim:  #7f1d1d;
+    --orange:   #f97316;
+    --yellow:   #eab308;
+    --green:    #22c55e;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --font-mono: 'Space Mono', monospace;
+    --font-ui:   'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(239,68,68,0.08) 0%, transparent 60%);
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,8,16,0.9);
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--red), #be123c);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-sub { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 2px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    padding: 6px 14px; border-radius: 20px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--red);
+    letter-spacing: 1px;
+  }
+  .pulse {
+    width: 8px; height: 8px; background: var(--red); border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── Main ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── Stats Bar ── */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    margin-bottom: 36px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: #2e2e4e; }
+  .stat-label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 800; line-height: 1; }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.orange { color: var(--orange); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.green  { color: var(--green); }
+
+  /* ── Section title ── */
+  .section-title {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Employee Cards ── */
+  .employee-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .emp-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    align-items: center; gap: 24px;
+    transition: all 0.2s; cursor: default;
+    position: relative; overflow: hidden;
+  }
+  .emp-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .emp-card.CRITICAL::before { background: var(--red); }
+  .emp-card.HIGH::before     { background: var(--orange); }
+  .emp-card.MEDIUM::before   { background: var(--yellow); }
+  .emp-card.LOW::before      { background: var(--green); }
+  .emp-card.CRITICAL { border-color: rgba(239,68,68,0.2); }
+  .emp-card:hover { transform: translateY(-1px); border-color: #2e2e4e; }
+
+  /* Risk ring */
+  .risk-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; font-weight: 800; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .risk-ring.CRITICAL { background: rgba(239,68,68,0.15); color: var(--red); border: 2px solid var(--red); }
+  .risk-ring.HIGH     { background: rgba(249,115,22,0.15); color: var(--orange); border: 2px solid var(--orange); }
+  .risk-ring.MEDIUM   { background: rgba(234,179,8,0.15);  color: var(--yellow); border: 2px solid var(--yellow); }
+  .risk-ring.LOW      { background: rgba(34,197,94,0.15);  color: var(--green);  border: 2px solid var(--green); }
+
+  .emp-info {}
+  .emp-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .emp-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .emp-activities { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .emp-activities span {
+    display: inline-block; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px;
+    margin-right: 6px; margin-top: 4px;
+  }
+
+  /* Risk level badge */
+  .risk-badge {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 4px; letter-spacing: 1px; white-space: nowrap;
+  }
+  .risk-badge.CRITICAL { background: rgba(239,68,68,0.15); color: var(--red);    border: 1px solid rgba(239,68,68,0.4); }
+  .risk-badge.HIGH     { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.4); }
+  .risk-badge.MEDIUM   { background: rgba(234,179,8,0.15);  color: var(--yellow); border: 1px solid rgba(234,179,8,0.4); }
+  .risk-badge.LOW      { background: rgba(34,197,94,0.15);  color: var(--green);  border: 1px solid rgba(34,197,94,0.4); }
+
+  /* Alert button */
+  .alert-btn {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white; border: none; border-radius: 8px;
+    padding: 10px 18px; font-family: var(--font-ui); font-weight: 700;
+    font-size: 13px; cursor: pointer; white-space: nowrap;
+    transition: all 0.2s; letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+  }
+  .alert-btn:hover { transform: scale(1.04); box-shadow: 0 6px 20px rgba(239,68,68,0.5); }
+  .alert-btn:active { transform: scale(0.97); }
+  .alert-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .alert-btn.sent { background: linear-gradient(135deg, #15803d, #166534); box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
+
+  /* Only show alert btn for CRITICAL / HIGH */
+  .emp-card.MEDIUM .alert-btn,
+  .emp-card.LOW .alert-btn { display: none; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 30px; right: 30px;
+    background: #0f1f0f; border: 1px solid var(--green);
+    color: var(--green); padding: 14px 22px; border-radius: 10px;
+    font-family: var(--font-mono); font-size: 13px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+    max-width: 380px; line-height: 1.5; z-index: 999;
+  }
+  #toast.error { background: #1f0f0f; border-color: var(--red); color: var(--red); }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── Sending overlay on card ── */
+  .sending-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-family: var(--font-mono);
+    font-size: 13px; color: var(--green); gap: 10px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .sending-overlay.active { opacity: 1; pointer-events: all; }
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 700px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .emp-card { grid-template-columns: auto 1fr; }
+    .risk-badge, .alert-btn { display: none; }
+    .emp-card.CRITICAL .alert-btn { display: block; grid-column: 1/-1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🛡</div>
+    <div>
+      <div class="logo-text">ThreatGuard</div>
+      <div class="logo-sub">Insider Threat Detection AI</div>
+    </div>
+  </div>
+  <div class="live-badge"><div class="pulse"></div> LIVE MONITORING</div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Critical Risk</div>
+      <div class="stat-value red" id="count-critical">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High Risk</div>
+      <div class="stat-value orange" id="count-high">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Medium Risk</div>
+      <div class="stat-value yellow" id="count-medium">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low / Safe</div>
+      <div class="stat-value green" id="count-low">—</div>
+    </div>
+  </div>
+
+  <!-- Employee List -->
+  <div class="section-title">Monitored Employees</div>
+  <div class="employee-grid" id="employee-grid">
+    <div style="text-align:center;padding:40px;color:var(--muted);font-family:var(--font-mono);">Loading employees…</div>
+  </div>
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const grid   = document.getElementById('employee-grid');
+const toast  = document.getElementById('toast');
+let employees = [];
+
+// ── Load Employees ──────────────────────────
+async function loadEmployees() {
+  const res  = await fetch('/api/employees');
+  employees  = await res.json();
+
+  document.getElementById('count-critical').textContent = employees.filter(e => e.riskLevel === 'CRITICAL').length;
+  document.getElementById('count-high').textContent     = employees.filter(e => e.riskLevel === 'HIGH').length;
+  document.getElementById('count-medium').textContent   = employees.filter(e => e.riskLevel === 'MEDIUM').length;
+  document.getElementById('count-low').textContent      = employees.filter(e => e.riskLevel === 'LOW').length;
+
+  // Sort: CRITICAL first
+  const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+  employees.sort((a, b) => order[a.riskLevel] - order[b.riskLevel]);
+
+  grid.innerHTML = employees.map(emp => `
+    <div class="emp-card ${emp.riskLevel}" id="card-${emp.id}">
+      <div class="risk-ring ${emp.riskLevel}">${emp.riskScore}</div>
+      <div class="emp-info">
+        <div class="emp-name">${emp.name}</div>
+        <div class="emp-meta">${emp.id} · ${emp.dept}</div>
+        <div class="emp-activities">
+          ${emp.activities.map(a => `<span>${a}</span>`).join('')}
+        </div>
+      </div>
+      <div class="risk-badge ${emp.riskLevel}">${emp.riskLevel}</div>
+      <button class="alert-btn" onclick="sendAlert('${emp.id}', this)">
+        🚨 Alert Security
+      </button>
+      <div class="sending-overlay" id="overlay-${emp.id}">
+        <span class="spin">⟳</span> Sending alert email…
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Send Alert ──────────────────────────────
+async function sendAlert(employeeId, btn) {
+  const overlay = document.getElementById(`overlay-${employeeId}`);
+  btn.disabled  = true;
+  overlay.classList.add('active');
+
+  try {
+    const res  = await fetch('/api/alert', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ employeeId }),
+    });
+    const data = await res.json();
+
+    overlay.classList.remove('active');
+
+    if (data.success) {
+      btn.textContent = '✅ Alert Sent!';
+      btn.classList.add('sent');
+      showToast(`✅ Email alert sent to security team!\n${data.message}`, false);
+    } else {
+      btn.disabled = false;
+      showToast(`❌ Failed: ${data.message}\n${data.hint || ''}`, true);
+    }
+  } catch (err) {
+    overlay.classList.remove('active');
+    btn.disabled = false;
+    showToast('❌ Server error. Is the server running?', true);
+  }
+}
+
+// ── Toast ───────────────────────────────────
+function showToast(msg, isError = false) {
+  toast.textContent = msg;
+  toast.className   = isError ? 'error show' : 'show';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+loadEmployees();
+</script>
+</body>
+</html>
